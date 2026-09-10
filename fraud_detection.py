@@ -16,9 +16,9 @@ def detect_fraud(file_path):
     # Select numerical columns
     numerical_data = data.select_dtypes(include=["number"]).copy()
 
-    if numerical_data.empty:
-        print("No numerical columns found in the dataset.")
-        return
+    # Remove transaction ID from machine learning features
+    if "transaction_id" in numerical_data.columns:
+        numerical_data = numerical_data.drop(columns=["transaction_id"])
 
     # Handle missing values
     numerical_data = numerical_data.fillna(numerical_data.median())
@@ -29,21 +29,21 @@ def detect_fraud(file_path):
 
     # Create Isolation Forest model
     model = IsolationForest(
-        contamination=0.02,
+        contamination=0.10,
         random_state=42
     )
 
-    # Predict anomalies
+    # Detect anomalies
     predictions = model.fit_predict(scaled_data)
 
-    # -1 = anomaly, 1 = normal
+    # -1 = suspicious/anomaly, 1 = normal
     data["fraud_prediction"] = predictions
 
     # Display suspicious transactions
     suspicious = data[data["fraud_prediction"] == -1]
 
     print("\nPotentially suspicious transactions:")
-    print(suspicious.head())
+    print(suspicious)
 
     print("\nTotal transactions:", len(data))
     print("Potential anomalies detected:", len(suspicious))
@@ -54,4 +54,7 @@ def detect_fraud(file_path):
 if __name__ == "__main__":
     print("Credit Card Fraud Detection System")
     print("----------------------------------")
-    print("Upload a CSV dataset and call detect_fraud('your_file.csv')")
+
+    results = detect_fraud("sample_transactions.csv")
+
+    print("\nAnalysis completed successfully!")
